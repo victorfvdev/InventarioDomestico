@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+dist/
+bin/
+api/bin/
+api/data/
+data/
+uploads/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+tmp/
+tmp-web/
+*.exe

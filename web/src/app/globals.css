@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #1f4d3a;
+  --brand-fg: #f4faf6;
+  --accent: #c45c26;
+  --accent-fg: #fff8f3;
+  --ink: #1c241f;
+  --muted: #5d6b63;
+  --paper: #eef3ef;
+  --surface: #e2ebe5;
+  --surface-strong: #d3dfd8;
+  --line: #b7c7bd;
+  --ring: #2f6b52;
+  --ok: #1b6b45;
+  --ok-soft: #d7eee2;
+  --warn: #8a5a12;
+  --warn-soft: #f5e6c8;
+  --danger: #9b2c2c;
+  --danger-soft: #f8e0e0;
+  --atmosphere: radial-gradient(1200px 600px at 10% -10%, #d9e8de 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #e8dcc8 0%, transparent 45%),
+    linear-gradient(180deg, #f3f7f4 0%, #e7eee9 48%, #eef3ef 100%);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: var(--ink);
+  background: var(--atmosphere);
+  font-family: var(--font-sans), "Segoe UI", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 28%, white);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 480ms ease-out both;
+}
+
+.animate-rise-delay {
+  animation: rise-in 560ms ease-out 80ms both;
+}
+
+.pantry-grid {
+  background-image: linear-gradient(rgba(31, 77, 58, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 77, 58, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
