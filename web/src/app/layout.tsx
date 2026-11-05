@@ -16,7 +16,7 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: "Estoque — inventário doméstico",
-  description: "Núcleo de estoque com carga inicial por foto e confirmação humana.",
+  description: "Estoque doméstico com carga por foto e entrada por NFC-e MT.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

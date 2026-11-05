@@ -126,3 +126,108 @@ type SessionInfo struct {
 	User      User      `json:"user"`
 	Household Household `json:"household"`
 }
+
+type FiscalDocStatus string
+
+const (
+	FiscalDraft     FiscalDocStatus = "draft"
+	FiscalFetched   FiscalDocStatus = "fetched"
+	FiscalParsed    FiscalDocStatus = "parsed"
+	FiscalConfirmed FiscalDocStatus = "confirmed"
+	FiscalRejected  FiscalDocStatus = "rejected"
+)
+
+type MatchStatus string
+
+const (
+	MatchExact      MatchStatus = "exact"
+	MatchSuggested  MatchStatus = "suggested"
+	MatchAmbiguous  MatchStatus = "ambiguous"
+	MatchNew        MatchStatus = "new"
+	MatchManual     MatchStatus = "manual"
+)
+
+type FiscalDocument struct {
+	ID          uuid.UUID       `json:"id"`
+	HouseholdID uuid.UUID       `json:"householdId"`
+	AccessKey   string          `json:"accessKey"`
+	UF          string          `json:"uf"`
+	DocumentType string         `json:"documentType"`
+	IssuerName  string          `json:"issuerName"`
+	IssuerCNPJ  string          `json:"issuerCnpj"`
+	IssuedAt    *time.Time      `json:"issuedAt,omitempty"`
+	TotalAmount decimal.Decimal `json:"totalAmount"`
+	Status      FiscalDocStatus `json:"status"`
+	Source      string          `json:"source"`
+	FetchNotes  string          `json:"fetchNotes,omitempty"`
+	CreatedAt   time.Time       `json:"createdAt"`
+	ConfirmedAt *time.Time      `json:"confirmedAt,omitempty"`
+	Items       []FiscalItem    `json:"items,omitempty"`
+	AlreadyPosted bool          `json:"alreadyPosted,omitempty"`
+}
+
+type FiscalItem struct {
+	ID                    uuid.UUID        `json:"id"`
+	FiscalDocumentID      uuid.UUID        `json:"fiscalDocumentId"`
+	LineNumber            int              `json:"lineNumber"`
+	Description           string           `json:"description"`
+	DescriptionNormalized string           `json:"descriptionNormalized"`
+	Quantity              decimal.Decimal  `json:"quantity"`
+	Unit                  string           `json:"unit"`
+	UnitPrice             decimal.Decimal  `json:"unitPrice"`
+	TotalPrice            decimal.Decimal  `json:"totalPrice"`
+	EAN                   string           `json:"ean,omitempty"`
+	Category              string           `json:"category"`
+	MatchStatus           MatchStatus      `json:"matchStatus"`
+	MatchConfidence       *float64         `json:"matchConfidence,omitempty"`
+	MatchedProductID      *uuid.UUID       `json:"matchedProductId,omitempty"`
+	MatchedProductName    string           `json:"matchedProductName,omitempty"`
+	CreateNew             bool             `json:"createNew"`
+	Included              bool             `json:"included"`
+	AmbiguousCandidates   []ProductMatch   `json:"ambiguousCandidates,omitempty"`
+}
+
+type ProductMatch struct {
+	ProductID   uuid.UUID `json:"productId"`
+	Description string    `json:"description"`
+	Score       float64   `json:"score"`
+}
+
+type NFCeLookupInput struct {
+	AccessKey     string `json:"accessKey"`
+	QRUrl         string `json:"qrUrl"`
+	UseFixture    bool   `json:"useFixture"`
+}
+
+type ManualPurchaseItem struct {
+	Description string          `json:"description"`
+	Quantity    decimal.Decimal `json:"quantity"`
+	Unit        string          `json:"unit"`
+	UnitPrice   decimal.Decimal `json:"unitPrice"`
+	Category    string          `json:"category"`
+	EAN         string          `json:"ean"`
+}
+
+type ManualPurchaseInput struct {
+	AccessKey  string               `json:"accessKey"`
+	IssuerName string               `json:"issuerName"`
+	Items      []ManualPurchaseItem `json:"items"`
+	Notes      string               `json:"notes"`
+	Source     string               `json:"source,omitempty"` // manual | photo_stub
+}
+
+type ConfirmPurchaseItem struct {
+	ItemID      uuid.UUID       `json:"itemId"`
+	Included    bool            `json:"included"`
+	Description string          `json:"description"`
+	Quantity    decimal.Decimal `json:"quantity"`
+	Unit        string          `json:"unit"`
+	Category    string          `json:"category"`
+	ProductID   *uuid.UUID      `json:"productId"`
+	CreateNew   bool            `json:"createNew"`
+}
+
+type ConfirmPurchaseInput struct {
+	DocumentID uuid.UUID             `json:"documentId"`
+	Items      []ConfirmPurchaseItem `json:"items"`
+}

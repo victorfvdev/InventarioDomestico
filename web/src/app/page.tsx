@@ -72,6 +72,9 @@ export default function HomePage() {
               <Link href="/carga-inicial">Fotografar despensa</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
+              <Link href="/nfce">Entrada por NFC-e</Link>
+            </Button>
+            <Button asChild variant="ghost" size="lg">
               <Link href="/entrada">Entrada manual</Link>
             </Button>
           </div>

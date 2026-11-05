@@ -41,5 +41,12 @@ func NewRouter(api *handlers.API, corsOrigins string) http.Handler {
 	r.Get("/api/vision/interpretations/{id}", api.GetInterpretation)
 	r.Post("/api/vision/confirm-initial-load", api.ConfirmInitialLoad)
 
+	r.Get("/api/nfce/fixture", api.NFCeFixtureInfo)
+	r.Post("/api/nfce/lookup", api.NFCeLookup)
+	r.Post("/api/nfce/manual", api.NFCeManual)
+	r.Post("/api/nfce/photo-stub", api.NFCePhotoStub)
+	r.Get("/api/nfce/documents/{id}", api.GetFiscalDocument)
+	r.Post("/api/nfce/documents/{id}/confirm", api.ConfirmNFCe)
+
 	return r
 }
