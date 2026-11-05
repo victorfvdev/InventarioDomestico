@@ -74,6 +74,9 @@ export default function HomePage() {
             <Button asChild variant="outline" size="lg">
               <Link href="/nfce">Entrada por NFC-e</Link>
             </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/consumo">Baixa por texto</Link>
+            </Button>
             <Button asChild variant="ghost" size="lg">
               <Link href="/entrada">Entrada manual</Link>
             </Button>

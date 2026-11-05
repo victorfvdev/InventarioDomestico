@@ -48,5 +48,11 @@ func NewRouter(api *handlers.API, corsOrigins string) http.Handler {
 	r.Get("/api/nfce/documents/{id}", api.GetFiscalDocument)
 	r.Post("/api/nfce/documents/{id}/confirm", api.ConfirmNFCe)
 
+	r.Post("/api/consumption/interpret", api.InterpretConsumption)
+	r.Post("/api/consumption/confirm", api.ConfirmConsumption)
+	r.Get("/api/consumption/shortcuts", api.ListConsumptionShortcuts)
+	r.Post("/api/consumption/quick", api.QuickConsume)
+	r.Post("/api/consumption/undo", api.UndoConsumption)
+
 	return r
 }

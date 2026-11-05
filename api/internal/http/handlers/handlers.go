@@ -20,6 +20,7 @@ type API struct {
 	Inventory      *service.InventoryService
 	Vision         *service.VisionService
 	Purchase       *service.PurchaseService
+	Consumption    *service.ConsumptionService
 	CurrentSession domain.SessionInfo
 }
 

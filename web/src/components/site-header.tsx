@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Estoque" },
   { href: "/carga-inicial", label: "Carga por foto" },
   { href: "/nfce", label: "NFC-e MT" },
+  { href: "/consumo", label: "Consumo" },
   { href: "/entrada", label: "Entrada manual" },
   { href: "/movimentacoes", label: "Movimentações" },
 ];

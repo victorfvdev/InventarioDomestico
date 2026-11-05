@@ -283,3 +283,146 @@ func nullIfEmpty(s string) *string {
 	}
 	return &s
 }
+
+func (r *Repository) InsertConsumptionInterpretation(ctx context.Context, interp domain.ConsumptionInterpretation, raw json.RawMessage) (domain.ConsumptionInterpretation, error) {
+	lines, err := json.Marshal(interp.Lines)
+	if err != nil {
+		return interp, err
+	}
+	if raw == nil {
+		raw = json.RawMessage(`{}`)
+	}
+	err = r.pool.QueryRow(ctx, `
+		INSERT INTO ai_interpretations(
+			id, household_id, source_type, image_filename, provider, raw_response, suggestions,
+			decision, overall_confidence
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		RETURNING id, household_id, source_type, provider, decision, created_at, confirmed_at
+	`, interp.ID, interp.HouseholdID, interp.SourceType, nullIfEmpty(interp.OriginalText), interp.Provider,
+		raw, lines, interp.Decision, nil).Scan(
+		&interp.ID, &interp.HouseholdID, &interp.SourceType, &interp.Provider,
+		&interp.Decision, &interp.CreatedAt, &interp.ConfirmedAt,
+	)
+	return interp, err
+}
+
+func (r *Repository) GetConsumptionInterpretation(ctx context.Context, householdID, id uuid.UUID) (domain.ConsumptionInterpretation, error) {
+	var interp domain.ConsumptionInterpretation
+	var lines []byte
+	var original *string
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, household_id, source_type, image_filename, provider, suggestions,
+		       decision, created_at, confirmed_at
+		FROM ai_interpretations
+		WHERE household_id=$1 AND id=$2
+	`, householdID, id).Scan(
+		&interp.ID, &interp.HouseholdID, &interp.SourceType, &original, &interp.Provider,
+		&lines, &interp.Decision, &interp.CreatedAt, &interp.ConfirmedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return interp, ErrNotFound
+	}
+	if err != nil {
+		return interp, err
+	}
+	if original != nil {
+		interp.OriginalText = *original
+	}
+	if err := json.Unmarshal(lines, &interp.Lines); err != nil {
+		return interp, fmt.Errorf("decode consumption lines: %w", err)
+	}
+	if interp.Lines == nil {
+		interp.Lines = []domain.ConsumptionLineSuggestion{}
+	}
+	return interp, nil
+}
+
+func (r *Repository) MarkConsumptionInterpretationConfirmed(ctx context.Context, tx pgx.Tx, id uuid.UUID, lines []domain.ConsumptionLineSuggestion) error {
+	body, err := json.Marshal(lines)
+	if err != nil {
+		return err
+	}
+	ct, err := tx.Exec(ctx, `
+		UPDATE ai_interpretations
+		SET decision='confirmed', confirmed_at=$2, suggestions=$3
+		WHERE id=$1 AND decision='pending'
+	`, id, time.Now().UTC(), body)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *Repository) GetMovement(ctx context.Context, householdID, movementID uuid.UUID) (domain.Movement, error) {
+	var m domain.Movement
+	err := r.pool.QueryRow(ctx, `
+		SELECT m.id, m.household_id, m.product_id, m.movement_type, m.quantity_delta, m.balance_after,
+		       m.origin, COALESCE(m.notes,''), m.is_consumption, m.created_by, m.created_at,
+		       p.description
+		FROM movements m
+		JOIN products p ON p.id = m.product_id
+		WHERE m.household_id=$1 AND m.id=$2
+	`, householdID, movementID).Scan(
+		&m.ID, &m.HouseholdID, &m.ProductID, &m.MovementType, &m.QuantityDelta, &m.BalanceAfter,
+		&m.Origin, &m.Notes, &m.IsConsumption, &m.CreatedBy, &m.CreatedAt, &m.ProductName,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return m, ErrNotFound
+	}
+	return m, err
+}
+
+func (r *Repository) MarkMovementNotes(ctx context.Context, tx pgx.Tx, id uuid.UUID, notes string) error {
+	ct, err := tx.Exec(ctx, `UPDATE movements SET notes=$2 WHERE id=$1`, id, notes)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+type FrequentConsumption struct {
+	ProductID  uuid.UUID
+	TypicalQty decimal.Decimal
+	Count      int
+}
+
+func (r *Repository) FrequentConsumptions(ctx context.Context, householdID uuid.UUID, limit int) ([]FrequentConsumption, error) {
+	if limit <= 0 {
+		limit = 8
+	}
+	rows, err := r.pool.Query(ctx, `
+		SELECT product_id,
+		       ABS(AVG(quantity_delta)) AS typical_qty,
+		       COUNT(*)::int AS cnt
+		FROM movements
+		WHERE household_id=$1
+		  AND is_consumption = true
+		  AND movement_type = 'consumption'
+		  AND COALESCE(notes,'') NOT LIKE '%[desfeito]%'
+		GROUP BY product_id
+		ORDER BY cnt DESC, typical_qty DESC
+		LIMIT $2
+	`, householdID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []FrequentConsumption
+	for rows.Next() {
+		var f FrequentConsumption
+		if err := rows.Scan(&f.ProductID, &f.TypicalQty, &f.Count); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	if out == nil {
+		out = []FrequentConsumption{}
+	}
+	return out, rows.Err()
+}

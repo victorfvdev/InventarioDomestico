@@ -1,16 +1,17 @@
 # Estoque
 
-Inventário doméstico com núcleo de produtos/movimentações, **carga inicial por foto (RN01)** e **entrada por NFC-e MT / Cuiabá (RN02)**.
+Inventário doméstico com núcleo de produtos/movimentações, **carga inicial por foto (RN01)**, **entrada por NFC-e MT / Cuiabá (RN02)** e **baixa por texto + atalhos (RN04/RN06)**.
 
 ## O que este repositório entrega
 
 - API Go (monólito modular) + PostgreSQL
 - Produtos com status **estimado** vs **confirmado**
-- Movimentações imutáveis: entrada manual, ajuste, carga inicial, `purchase_entry`
+- Movimentações imutáveis: entrada manual, ajuste, carga inicial, `purchase_entry`, `consumption`
 - Fluxo A: foto → visão (mock sem OpenAI) → confirmação → inventário
 - Fluxo B: chave/QR NFC-e MT → itens → match de produtos → confirmação → estoque
+- Fluxo C: texto PT-BR ou atalho → revisão → confirmação → `consumption` (desfazer via ajuste ≠ consumo)
 - Idempotência: a mesma chave de 44 dígitos nunca republica saldo
-- Fallbacks: fixture offline Cuiabá, colar chave, itens manuais, stub de foto sem OpenAI
+- Fallbacks: fixture offline Cuiabá, colar chave, itens manuais, stub de foto sem OpenAI, parser local PT-BR
 
 ## Pré-requisitos
 
@@ -29,7 +30,7 @@ docker compose up -d postgres
 
 ```bash
 cp .env.example .env
-# OPENAI_API_KEY é opcional (visão e cupom usam mock/stub sem chave)
+# OPENAI_API_KEY é opcional (visão, cupom e consumo usam mock/parser local sem chave)
 # NFCE_FORCE_FIXTURE=true força o HTML offline MT sem tentar SEFAZ
 ```
 
@@ -56,26 +57,33 @@ npm run dev -- -p 3848 -H 127.0.0.1
 
 Abra [http://127.0.0.1:3848](http://127.0.0.1:3848).
 
+## Baixa por texto e atalhos (EST-5)
+
+1. Cadastre produtos (foto, NFC-e ou entrada manual)
+2. Abra [http://127.0.0.1:3848/consumo](http://127.0.0.1:3848/consumo)
+3. Escreva algo como `Comi duas bananas.` → revise matches → **Confirmar baixa**
+4. Use atalhos (histórico ou sementes) com confirmação explícita
+5. **Desfazer** gera `inventory_adjust` (não conta como consumo)
+
+Via API:
+
+```bash
+curl -s -X POST http://127.0.0.1:3847/api/consumption/interpret \
+  -H 'content-type: application/json' \
+  -d '{"text":"Comi duas bananas."}' | jq
+curl -s http://127.0.0.1:3847/api/consumption/shortcuts | jq
+```
+
+Parser: `api/internal/consumption` (local PT-BR, sem OpenAI). OpenAI fica opcional para o futuro.
+
 ## NFC-e Mato Grosso (EST-4)
 
 ### Caminho de demo com fixture (recomendado)
 
 1. Abra [http://127.0.0.1:3848/nfce](http://127.0.0.1:3848/nfce)
-2. Clique em **Usar fixture Cuiabá** (Atacadão · chave `51241103887073000156650010001234561123456780`)
-3. Revise matches (exato / sugestão / ambiguidade / novo)
-4. Confirme — gera movimentações `purchase_entry`
-5. Repita a mesma chave: a API devolve o documento já lançado e **não** duplica estoque
-
-Via API:
-
-```bash
-curl -s http://127.0.0.1:3847/api/nfce/fixture | jq
-curl -s -X POST http://127.0.0.1:3847/api/nfce/lookup \
-  -H 'content-type: application/json' \
-  -d '{"useFixture":true}' | jq '.document.accessKey,.usedFixture,.notes'
-```
-
-Fixture HTML: `api/internal/nfce/fixture/cuiaba-atacadao.html`
+2. Clique em **Usar fixture Cuiabá**
+3. Revise matches e confirme — gera `purchase_entry`
+4. Repetir a mesma chave não duplica estoque
 
 ### Consulta real SEFAZ-MT — o que funciona vs o que é bloqueado
 
@@ -84,24 +92,23 @@ Fixture HTML: `api/internal/nfce/fixture/cuiaba-atacadao.html`
 | Fixture offline / parse HTML | Funciona (demos e testes) |
 | Colar chave 44 dígitos ou URL do QR | Funciona (extrai chave; tenta SEFAZ ou cai na fixture) |
 | Entrada manual de itens | Funciona |
-| Foto do cupom | Stub local **sem** OpenAI (itens típicos para revisão) |
-| Consulta automática SEFAZ-MT ao vivo | Tentada (`GET` na consulta pública); com frequência **bloqueada** por CAPTCHA, sessão/cookies, HTML sem tabela de itens ou indisponibilidade |
+| Foto do cupom | Stub local **sem** OpenAI |
+| Consulta automática SEFAZ-MT ao vivo | Tentada; com frequência bloqueada por CAPTCHA/HTML |
 
-Limites documentados no adapter (`api/internal/nfce/adapter.go`) e em `GET /api/nfce/fixture`.
-
-## Fluxo rápido (Slice C + EST-4)
+## Fluxo rápido
 
 1. **Carga por foto** — inventário inicial confirmado
 2. **NFC-e MT** — compra via fixture ou chave
-3. **Entrada manual** / **Ajustar** — correções pontuais
-4. **Movimentações** — auditoria (`purchase_entry`, `initial_load`, …)
+3. **Consumo** — texto ou atalho com confirmação humana
+4. **Entrada manual** / **Ajustar** — correções pontuais
+5. **Movimentações** — auditoria
 
 ## Testes
 
 ```bash
-cd api && go test ./internal/nfce/
+cd api && go test ./internal/consumption/ ./internal/service/ -run 'Parse|Rank|Consumption' ./internal/nfce/
 ```
 
 ## Fora deste slice
 
-Visão OpenAI real para cupom, baixa por texto, receitas, voz, multi-usuário e lista de compras.
+Visão OpenAI real, receitas, voz, multi-usuário e lista de compras.

@@ -48,11 +48,13 @@ func main() {
 	vision := service.NewVisionService(repo, cfg.OpenAIAPIKey, cfg.VisionModel, cfg.UploadDir)
 	nfceAdapter := nfce.NewAdapter(cfg.NFCeFixturePath, cfg.NFCeForceFixture)
 	purchase := service.NewPurchaseService(repo, nfceAdapter)
+	consume := service.NewConsumptionService(repo)
 	api := &handlers.API{
 		Repo:           repo,
 		Inventory:      inventory,
 		Vision:         vision,
 		Purchase:       purchase,
+		Consumption:    consume,
 		CurrentSession: session,
 	}
 
