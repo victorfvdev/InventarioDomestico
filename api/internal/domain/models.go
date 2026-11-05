@@ -231,3 +231,84 @@ type ConfirmPurchaseInput struct {
 	DocumentID uuid.UUID             `json:"documentId"`
 	Items      []ConfirmPurchaseItem `json:"items"`
 }
+
+// --- Consumption / natural language (RN04, RN06) ---
+
+type ConsumptionLineSuggestion struct {
+	TempID               string          `json:"tempId"`
+	MentionedText        string          `json:"mentionedText"`
+	ProductHint          string          `json:"productHint"`
+	Quantity             decimal.Decimal `json:"quantity"`
+	Unit                 string          `json:"unit"`
+	QuantityInferred     bool            `json:"quantityInferred"`
+	Approx               bool            `json:"approx"`
+	MatchStatus          MatchStatus     `json:"matchStatus"`
+	MatchedProductID     *uuid.UUID      `json:"matchedProductId,omitempty"`
+	MatchedProductName   string          `json:"matchedProductName,omitempty"`
+	MatchConfidence      *float64        `json:"matchConfidence,omitempty"`
+	AvailableQuantity    decimal.Decimal `json:"availableQuantity"`
+	InsufficientStock    bool            `json:"insufficientStock"`
+	Candidates           []ProductMatch  `json:"candidates,omitempty"`
+	Included             bool            `json:"included"`
+	Notes                string          `json:"notes,omitempty"`
+	Unmatched            bool            `json:"unmatched"`
+}
+
+type ConsumptionInterpretation struct {
+	ID              uuid.UUID                   `json:"id"`
+	HouseholdID     uuid.UUID                   `json:"householdId"`
+	SourceType      string                      `json:"sourceType"`
+	Provider        string                      `json:"provider"`
+	OriginalText    string                      `json:"originalText"`
+	Lines           []ConsumptionLineSuggestion `json:"lines"`
+	Decision        string                      `json:"decision"`
+	CreatedAt       time.Time                   `json:"createdAt"`
+	ConfirmedAt     *time.Time                  `json:"confirmedAt,omitempty"`
+}
+
+type InterpretConsumptionInput struct {
+	Text string `json:"text"`
+}
+
+type InterpretConsumptionResult struct {
+	Interpretation ConsumptionInterpretation `json:"interpretation"`
+	Provider       string                    `json:"provider"`
+	Mocked         bool                      `json:"mocked"`
+}
+
+type ConfirmConsumptionItem struct {
+	TempID    string          `json:"tempId"`
+	Included  bool            `json:"included"`
+	ProductID uuid.UUID       `json:"productId"`
+	Quantity  decimal.Decimal `json:"quantity"`
+	Unit      string          `json:"unit"`
+	Notes     string          `json:"notes"`
+}
+
+type ConfirmConsumptionInput struct {
+	InterpretationID uuid.UUID                `json:"interpretationId"`
+	Items            []ConfirmConsumptionItem `json:"items"`
+}
+
+type QuickConsumeInput struct {
+	ProductID uuid.UUID       `json:"productId"`
+	Quantity  decimal.Decimal `json:"quantity"`
+	Unit      string          `json:"unit"`
+	Notes     string          `json:"notes"`
+	Confirm   bool            `json:"confirm"`
+}
+
+type UndoConsumptionInput struct {
+	MovementID uuid.UUID `json:"movementId"`
+}
+
+type ConsumptionShortcut struct {
+	ID          string          `json:"id"`
+	Label       string          `json:"label"`
+	ProductID   uuid.UUID       `json:"productId"`
+	ProductName string          `json:"productName"`
+	Quantity    decimal.Decimal `json:"quantity"`
+	Unit        string          `json:"unit"`
+	Source      string          `json:"source"` // history | seed
+	Available   decimal.Decimal `json:"available"`
+}

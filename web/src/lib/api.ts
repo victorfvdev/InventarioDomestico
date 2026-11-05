@@ -232,4 +232,90 @@ export const api = {
       `/api/nfce/documents/${documentId}/confirm`,
       { method: "POST", body: JSON.stringify({ documentId, items }) },
     ),
+  interpretConsumption: (text: string) =>
+    request<InterpretConsumptionResult>("/api/consumption/interpret", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
+  confirmConsumption: (body: {
+    interpretationId: string;
+    items: Array<{
+      tempId: string;
+      included: boolean;
+      productId: string;
+      quantity: number;
+      unit: string;
+      notes?: string;
+    }>;
+  }) =>
+    request<{ movements: Movement[]; message: string }>("/api/consumption/confirm", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  consumptionShortcuts: () =>
+    request<{ shortcuts: ConsumptionShortcut[] }>("/api/consumption/shortcuts"),
+  quickConsume: (body: {
+    productId: string;
+    quantity: number;
+    unit?: string;
+    notes?: string;
+    confirm: boolean;
+  }) =>
+    request<{ movement: Movement; message: string }>("/api/consumption/quick", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  undoConsumption: (movementId: string) =>
+    request<{ movement: Movement; message: string }>("/api/consumption/undo", {
+      method: "POST",
+      body: JSON.stringify({ movementId }),
+    }),
+};
+
+export type ConsumptionLine = {
+  tempId: string;
+  mentionedText: string;
+  productHint: string;
+  quantity: string;
+  unit: string;
+  quantityInferred: boolean;
+  approx: boolean;
+  matchStatus: "exact" | "suggested" | "ambiguous" | "new" | "manual";
+  matchedProductId?: string | null;
+  matchedProductName?: string;
+  matchConfidence?: number;
+  availableQuantity: string;
+  insufficientStock: boolean;
+  candidates?: ProductMatch[];
+  included: boolean;
+  notes?: string;
+  unmatched: boolean;
+};
+
+export type ConsumptionInterpretation = {
+  id: string;
+  householdId: string;
+  sourceType: string;
+  provider: string;
+  originalText: string;
+  lines: ConsumptionLine[];
+  decision: string;
+  createdAt: string;
+};
+
+export type InterpretConsumptionResult = {
+  interpretation: ConsumptionInterpretation;
+  provider: string;
+  mocked: boolean;
+};
+
+export type ConsumptionShortcut = {
+  id: string;
+  label: string;
+  productId: string;
+  productName: string;
+  quantity: string;
+  unit: string;
+  source: "history" | "seed" | string;
+  available: string;
 };
