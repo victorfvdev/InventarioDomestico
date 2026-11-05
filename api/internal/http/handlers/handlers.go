@@ -16,10 +16,11 @@ import (
 )
 
 type API struct {
-	Repo            *repository.Repository
-	Inventory       *service.InventoryService
-	Vision          *service.VisionService
-	CurrentSession  domain.SessionInfo
+	Repo           *repository.Repository
+	Inventory      *service.InventoryService
+	Vision         *service.VisionService
+	Purchase       *service.PurchaseService
+	CurrentSession domain.SessionInfo
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

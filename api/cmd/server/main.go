@@ -13,6 +13,7 @@ import (
 	"github.com/estoque/api/internal/db"
 	"github.com/estoque/api/internal/http/handlers"
 	httpapi "github.com/estoque/api/internal/http"
+	"github.com/estoque/api/internal/nfce"
 	"github.com/estoque/api/internal/repository"
 	"github.com/estoque/api/internal/service"
 	"github.com/joho/godotenv"
@@ -45,10 +46,13 @@ func main() {
 
 	inventory := service.NewInventoryService(repo)
 	vision := service.NewVisionService(repo, cfg.OpenAIAPIKey, cfg.VisionModel, cfg.UploadDir)
+	nfceAdapter := nfce.NewAdapter(cfg.NFCeFixturePath, cfg.NFCeForceFixture)
+	purchase := service.NewPurchaseService(repo, nfceAdapter)
 	api := &handlers.API{
 		Repo:           repo,
 		Inventory:      inventory,
 		Vision:         vision,
+		Purchase:       purchase,
 		CurrentSession: session,
 	}
 

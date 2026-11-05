@@ -1,15 +1,16 @@
-# Estoque — Slice C
+# Estoque
 
-Inventário doméstico com núcleo de produtos/movimentações e **carga inicial por foto (RN01)** com confirmação humana.
+Inventário doméstico com núcleo de produtos/movimentações, **carga inicial por foto (RN01)** e **entrada por NFC-e MT / Cuiabá (RN02)**.
 
-## O que este slice entrega
+## O que este repositório entrega
 
 - API Go (monólito modular) + PostgreSQL
 - Produtos com status **estimado** vs **confirmado**
-- Movimentações imutáveis: entrada manual, ajuste de inventário, carga inicial
-- Ajuste de inventário **não** é consumo
-- Fluxo A: foto → sugestões de visão → revisão → confirmação → inventário
-- Fallback mock local quando `OPENAI_API_KEY` está ausente
+- Movimentações imutáveis: entrada manual, ajuste, carga inicial, `purchase_entry`
+- Fluxo A: foto → visão (mock sem OpenAI) → confirmação → inventário
+- Fluxo B: chave/QR NFC-e MT → itens → match de produtos → confirmação → estoque
+- Idempotência: a mesma chave de 44 dígitos nunca republica saldo
+- Fallbacks: fixture offline Cuiabá, colar chave, itens manuais, stub de foto sem OpenAI
 
 ## Pré-requisitos
 
@@ -19,23 +20,17 @@ Inventário doméstico com núcleo de produtos/movimentações e **carga inicial
 
 ## Subir o banco
 
-Com Docker:
-
 ```bash
 docker compose up -d postgres
-```
-
-Sem Docker (exemplo local já criado):
-
-```bash
-# usuário/senha/db: estoque / estoque / estoque
+# ou PostgreSQL local com usuário/senha/db: estoque / estoque / estoque
 ```
 
 ## Configuração
 
 ```bash
 cp .env.example .env
-# opcional: preencha OPENAI_API_KEY para visão real
+# OPENAI_API_KEY é opcional (visão e cupom usam mock/stub sem chave)
+# NFCE_FORCE_FIXTURE=true força o HTML offline MT sem tentar SEFAZ
 ```
 
 ## API (porta 3847)
@@ -61,13 +56,52 @@ npm run dev -- -p 3848 -H 127.0.0.1
 
 Abra [http://127.0.0.1:3848](http://127.0.0.1:3848).
 
-## Fluxo rápido
+## NFC-e Mato Grosso (EST-4)
 
-1. Em **Carga por foto**, envie qualquer imagem de despensa
-2. Revise/edite as sugestões (mock se não houver chave)
-3. Confirme — só então o saldo é criado como **confirmado**
-4. Use **Entrada manual** e **Ajustar** na lista; veja o histórico em **Movimentações**
+### Caminho de demo com fixture (recomendado)
+
+1. Abra [http://127.0.0.1:3848/nfce](http://127.0.0.1:3848/nfce)
+2. Clique em **Usar fixture Cuiabá** (Atacadão · chave `51241103887073000156650010001234561123456780`)
+3. Revise matches (exato / sugestão / ambiguidade / novo)
+4. Confirme — gera movimentações `purchase_entry`
+5. Repita a mesma chave: a API devolve o documento já lançado e **não** duplica estoque
+
+Via API:
+
+```bash
+curl -s http://127.0.0.1:3847/api/nfce/fixture | jq
+curl -s -X POST http://127.0.0.1:3847/api/nfce/lookup \
+  -H 'content-type: application/json' \
+  -d '{"useFixture":true}' | jq '.document.accessKey,.usedFixture,.notes'
+```
+
+Fixture HTML: `api/internal/nfce/fixture/cuiaba-atacadao.html`
+
+### Consulta real SEFAZ-MT — o que funciona vs o que é bloqueado
+
+| Caminho | Status |
+| --- | --- |
+| Fixture offline / parse HTML | Funciona (demos e testes) |
+| Colar chave 44 dígitos ou URL do QR | Funciona (extrai chave; tenta SEFAZ ou cai na fixture) |
+| Entrada manual de itens | Funciona |
+| Foto do cupom | Stub local **sem** OpenAI (itens típicos para revisão) |
+| Consulta automática SEFAZ-MT ao vivo | Tentada (`GET` na consulta pública); com frequência **bloqueada** por CAPTCHA, sessão/cookies, HTML sem tabela de itens ou indisponibilidade |
+
+Limites documentados no adapter (`api/internal/nfce/adapter.go`) e em `GET /api/nfce/fixture`.
+
+## Fluxo rápido (Slice C + EST-4)
+
+1. **Carga por foto** — inventário inicial confirmado
+2. **NFC-e MT** — compra via fixture ou chave
+3. **Entrada manual** / **Ajustar** — correções pontuais
+4. **Movimentações** — auditoria (`purchase_entry`, `initial_load`, …)
+
+## Testes
+
+```bash
+cd api && go test ./internal/nfce/
+```
 
 ## Fora deste slice
 
-NFC-e MT, baixa por texto, receitas, voz, multi-usuário e lista de compras.
+Visão OpenAI real para cupom, baixa por texto, receitas, voz, multi-usuário e lista de compras.

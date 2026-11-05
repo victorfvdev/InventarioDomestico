@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Consulta NFC-e — SEFAZ/MT (fixture offline)</title>
+</head>
+<body>
+  <!--
+    Fixture offline de NFC-e emitida em Cuiabá/MT para demos e testes do Estoque.
+    NÃO é um HTML oficial da SEFAZ; espelha campos típicos da consulta pública.
+    Chave: 51241103887073000156650010001234561123456780
+  -->
+  <div id="conteudo">
+    <h1>Documento Auxiliar da Nota Fiscal de Consumidor Eletrônica</h1>
+    <table id="resumo">
+      <tr><th>Chave de Acesso</th><td id="chaveAcesso">5124 1103 8870 7300 0156 6500 1000 1234 5611 2345 6780</td></tr>
+      <tr><th>Número</th><td>123456</td></tr>
+      <tr><th>Série</th><td>1</td></tr>
+      <tr><th>Data de Emissão</th><td>15/11/2024 18:42:11</td></tr>
+      <tr><th>Valor Total</th><td>R$ 87,45</td></tr>
+    </table>
+
+    <h2>Emitente</h2>
+    <table id="emitente">
+      <tr><th>Nome / Razão Social</th><td>ATACADAO S.A.</td></tr>
+      <tr><th>CNPJ</th><td>03.887.073/0001-56</td></tr>
+      <tr><th>Endereço</th><td>AV MIGUEL SUTIL, 5500 — DUQUE DE CAXIAS — CUIABA/MT</td></tr>
+      <tr><th>UF</th><td>MT</td></tr>
+    </table>
+
+    <h2>Produtos / Serviços</h2>
+    <table id="tabResult">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descrição</th>
+          <th>Qtde</th>
+          <th>Un</th>
+          <th>Vl Unit</th>
+          <th>Vl Total</th>
+          <th>Cód.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>LEITE ITALAC INT TP 1L</td>
+          <td>6,0000</td>
+          <td>UN</td>
+          <td>4,89</td>
+          <td>29,34</td>
+          <td>7898080640604</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>ARROZ TIO JOAO T1 5KG</td>
+          <td>1,0000</td>
+          <td>UN</td>
+          <td>27,90</td>
+          <td>27,90</td>
+          <td>7893500019798</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>FEIJAO CARIOCA KICALDO 1KG</td>
+          <td>2,0000</td>
+          <td>UN</td>
+          <td>8,49</td>
+          <td>16,98</td>
+          <td>7896006740115</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>CAFE PILAO TRAD VACUO 500G</td>
+          <td>1,0000</td>
+          <td>UN</td>
+          <td>18,90</td>
+          <td>18,90</td>
+          <td>7896005800157</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>OVOS BRANCOS GD CARTELA C/12</td>
+          <td>1,0000</td>
+          <td>UN</td>
+          <td>12,99</td>
+          <td>12,99</td>
+          <td>7898904458011</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>BANANA PRATA KG</td>
+          <td>1,2500</td>
+          <td>KG</td>
+          <td>5,99</td>
+          <td>7,49</td>
+          <td>2001</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>SACO PLASTICO COBRADO</td>
+          <td>2,0000</td>
+          <td>UN</td>
+          <td>0,25</td>
+          <td>0,50</td>
+          <td>SACOLA</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p id="qrHint">
+      URL QR de exemplo:
+      https://www.sefaz.mt.gov.br/nfce/consultanfce?p=51241103887073000156650010001234561123456780|2|1|1|A1B2C3D4
+    </p>
+  </div>
+</body>
+</html>

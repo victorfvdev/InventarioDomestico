@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/", label: "Estoque" },
   { href: "/carga-inicial", label: "Carga por foto" },
+  { href: "/nfce", label: "NFC-e MT" },
   { href: "/entrada", label: "Entrada manual" },
   { href: "/movimentacoes", label: "Movimentações" },
 ];
